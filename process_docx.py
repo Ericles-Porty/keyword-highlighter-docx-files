@@ -16,7 +16,7 @@ def find_and_highlight_keywords(doc_path, keywords, output_folder, reports_folde
     doc_name = os.path.splitext(os.path.basename(doc_path))[0]
     found_keywords = []
     
-
+    
     # Percorre cada parágrafo procurando palavras-chave
     for paragraph in document.paragraphs:
         for keyword in keywords:
@@ -26,7 +26,7 @@ def find_and_highlight_keywords(doc_path, keywords, output_folder, reports_folde
                 if keyword not in found_keywords:
                     found_keywords.append(keyword)
                 highlight_keyword(paragraph, keyword)
-        
+
     # Salvar o arquivo modificado na pasta de saída
     if found:
         os.makedirs(output_folder, exist_ok=True)
@@ -91,6 +91,11 @@ def process_folder(keywords_file, input_folder, output_folder, reports_folder):
                 doc_name, found_keywords = find_and_highlight_keywords(doc_path, keywords, output_folder, reports_folder)
                 if found_keywords:
                     report_data.append((doc_name, found_keywords))
+
+    if report_data == []:
+        print('Nenhuma palavra-chave encontrada nos documentos / Nenhum documento encontrado')
+        time.sleep(3)
+        return
 
     generate_report(report_data, reports_folder)
 
