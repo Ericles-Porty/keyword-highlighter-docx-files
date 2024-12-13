@@ -1,4 +1,5 @@
 import os
+import time
 from docx import Document
 
 
@@ -8,17 +9,22 @@ def load_keywords(file_path):
         return [line.strip() for line in file.readlines()]
 
 
-def find_and_highlight_keywords(doc_path, keywords, output_folder):
+def find_and_highlight_keywords(doc_path, keywords, output_folder, reports_folder):
     """Procura palavras-chave em um documento .docx, destaca e salva se encontrar."""
     document = Document(doc_path)
     found = False
-
+    doc_name = os.path.splitext(os.path.basename(doc_path))[0]
+    found_keywords = []
+    
+    
     # Percorre cada parágrafo procurando palavras-chave
     for paragraph in document.paragraphs:
         for keyword in keywords:
             if keyword.lower() in paragraph.text.lower():
                 print(f'Palavra-chave "{keyword}" encontrada em {doc_path}')
                 found = True
+                if keyword not in found_keywords:
+                    found_keywords.append(keyword)
                 highlight_keyword(paragraph, keyword)
 
     # Salvar o arquivo modificado na pasta de saída
@@ -26,7 +32,9 @@ def find_and_highlight_keywords(doc_path, keywords, output_folder):
         os.makedirs(output_folder, exist_ok=True)
         output_path = os.path.join(output_folder, os.path.basename(doc_path))
         document.save(output_path)
-
+    
+    return doc_name, found_keywords
+        
 
 def highlight_keyword(paragraph, keyword):
     """Destaca a palavra-chave encontrada no parágrafo, mantendo a formatação original."""
@@ -65,18 +73,48 @@ def highlight_keyword(paragraph, keyword):
             run.font.highlight_color = 6  # Realce em vermelho
 
 
-def process_folder(keywords_file, input_folder, output_folder):
-    """Processa todos os arquivos .docx na pasta de entrada."""
-    keywords = load_keywords(keywords_file)
+def process_folder(keywords_file, input_folder, output_folder, reports_folder):
+    """Processa todos os arquivos .docx na pasta de entrada e gera um relatório."""
+    try:
+        keywords = load_keywords(keywords_file)
+    except FileNotFoundError:
+        print("Por favor, crie um arquivo keywords.txt contendo cada keyword separada por quebra de linha")
+        time.sleep(3)
+        return
+    
+    report_data = []
+
     for root, _, files in os.walk(input_folder):
         for file in files:
             if file.endswith('.docx'):
                 doc_path = os.path.join(root, file)
-                find_and_highlight_keywords(doc_path, keywords, output_folder)
+                doc_name, found_keywords = find_and_highlight_keywords(doc_path, keywords, output_folder, reports_folder)
+                if found_keywords:
+                    report_data.append((doc_name, found_keywords))
+
+    if report_data == []:
+        print('Nenhuma palavra-chave encontrada nos documentos / Nenhum documento encontrado')
+        time.sleep(3)
+        return
+
+    generate_report(report_data, reports_folder)
+
+
+def generate_report(report_data, reports_folder):
+    os.makedirs(reports_folder, exist_ok=True)
+
+    data_hora = time.strftime("%Y%m%d_%H%M%S")
+    
+    report_path = os.path.join(reports_folder, f'report_{data_hora}.txt')
+
+    with open(report_path, 'a', encoding='utf-8') as report:
+        for doc_name, keywords in report_data:
+            report.write(f'{doc_name}: {", ".join(keywords)}\n')
 
 
 keywords_file = 'keywords.txt'
 input_folder = 'input_docs'
 output_folder = 'output_docs'
+reports_folder = 'reports'
 
-process_folder(keywords_file, input_folder, output_folder)
+process_folder(keywords_file, input_folder, output_folder, reports_folder)
