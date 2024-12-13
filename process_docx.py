@@ -97,12 +97,10 @@ def process_folder(keywords_file, input_folder, output_folder, reports_folder):
 
 def generate_report(report_data, reports_folder):
     os.makedirs(reports_folder, exist_ok=True)
+
+    data_hora = time.strftime("%Y%m%d_%H%M%S")
     
-    report_number = 1
-    while os.path.exists(os.path.join(reports_folder, f'report_{report_number}.txt')):
-        report_number += 1
-    
-    report_path = os.path.join(reports_folder, f'report_{report_number}.txt')
+    report_path = os.path.join(reports_folder, f'report_{data_hora}.txt')
 
     with open(report_path, 'a', encoding='utf-8') as report:
         for doc_name, keywords in report_data:
